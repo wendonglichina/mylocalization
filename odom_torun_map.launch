@@ -1,0 +1,41 @@
+<launch>
+  <param name="use_sim_time" value="false" />
+
+  <!--arg name="rosbag_path" default="/home/bags/lidar3d_loc/map_car/" desc="直接跑launch请在此处修改" /-->
+  <!--arg name="fusion_odom_topic" default="/fusion/odom" desc="直接跑launch请在此处修改" /-->
+  <!--arg name="ground_truth_odom_topic" default="/ground_truth" desc="直接跑launch请在此处修改" /-->
+  <!--arg name="gnss_odom_in_map_topic" default="/gnss_odom_in_map" desc="直接跑launch请在此处修改" /-->
+  <!--arg name="map_dir" default="/home/maps/lidar3d_loc/submap_cxg" doc="直接跑launch请在此处修改"/-->
+
+  <arg name="rosbag_path" default="/home/bags/lidar3d_loc/map_car/" desc="直接跑launch请在此处修改" />
+  <!--arg name="fusion_odom_topic" default="/fusion/odom" desc="直接跑launch请在此处修改" /-->
+  <arg name="ground_truth_odom_topic" default="/velodyne_points" desc="直接跑launch请在此处修改" />
+  <arg name="gnss_odom_in_map_topic" default="/sensor/gnss/odom" desc="直接跑launch请在此处修改" />
+  <arg name="map_dir" default="/home/maps/lidar3d_loc/submap_cxg" doc="直接跑launch请在此处修改"/>
+  <arg name="vehicle_extrinsics_file" default="map_car.yaml" doc="直接跑launch请在此处修改" />
+  
+  <!--map to world-->
+  <node name="map_to_world_static_tf" type="pub_static_tf.py" pkg="param" output="log" respawn="true">
+    <param name="extf" value="$(arg map_dir)/map_extrinsics.yaml" />
+  </node>
+  
+  <node name="pub_static_tf" type="pub_static_tf.py" pkg="param" output="log" respawn="true">
+    <param name="extf" value="$(find vehicle_extrinsics)/files/$(arg vehicle_extrinsics_file)" />
+  </node>
+
+  <!--pub ground map for show-->
+  <node pkg="pub_pointcloud" type="pub_pointcloud" name="pub_thumbnail_map" output="screen">
+    <param name="input_pointcloud_path" value="$(arg map_dir)/thumbnail_map.pcd" />
+    <param name="output_pointcloud_topic" value="/thumbnail_map" />
+    <param name="pointcloud_frame_id" value="map" />
+  </node>
+
+  <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find lidar3d_loc)/rviz_cfg/runningmap.rviz" respawn="true" />
+
+  <node pkg="lidar3d_mapping" type="OdomRunMap" name="OdomRunMap" output="screen" respawn="false">
+    <param name="rosbag_path" value="$(arg rosbag_path)" />
+    <!--param name="fusion_odom_topic" value="$(arg fusion_odom_topic)" /-->
+    <!--param name="ground_truth_odom_topic" value="$(arg ground_truth_odom_topic)" /-->
+    <param name="gnss_odom_in_map_topic" value="$(arg gnss_odom_in_map_topic)" />
+  </node>
+</launch>
